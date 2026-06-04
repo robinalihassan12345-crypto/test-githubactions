@@ -90,44 +90,73 @@ jobs:
   # This job demonstrates CONTINUOUS DEPLOYMENT:
   #   - `needs: test` → only runs if the test job succeeds
   #   - `if:` → only runs on push to main (not on PRs)
-  #   - Builds a Docker image and pushes it to GitHub Container Registry (GHCR)
+  #   - Builds Docker image, pushes to Docker Hub, deploys to your server
+  #
+  # REQUIRED SECRETS (set in repo → Settings → Secrets and variables → Actions):
+  #   DOCKER_USERNAME    – your Docker Hub username
+  #   DOCKER_PASSWORD    – your Docker Hub password or access token
+  #   SERVER_HOST        – your server's IP address or hostname
+  #   SERVER_USER        – SSH username (usually "root" or "ubuntu")
+  #   SERVER_SSH_KEY     – private SSH key (paste the whole file content)
   deploy:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write      # needed to push to GHCR
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      # ── STEP: Log in to Docker Hub ──────────────────────────────────────
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # ── STEP: Build Docker image ────────────────────────────────────────
       - name: Build Docker image
         run: docker build -t helloworld .
 
+      # ── STEP: Smoke test ────────────────────────────────────────────────
       - name: Run container smoke test
         run: docker run --rm helloworld
 
-      - name: Tag and push to GHCR
+      # ── STEP: Tag and push to Docker Hub ────────────────────────────────
+      - name: Tag and push to Docker Hub
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}
+          IMAGE=${{ secrets.DOCKER_USERNAME }}/helloworld
           docker tag helloworld $IMAGE:latest
           docker tag helloworld $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
           docker push $IMAGE:${{ github.sha }}
 
-      - name: Run deploy script (simulated)
-        run: ./deploy.sh staging
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
+      # ── STEP: Deploy to your server via SSH ─────────────────────────────
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            IMAGE=${{ secrets.DOCKER_USERNAME }}/helloworld
+            echo "→ Pulling latest image: $IMAGE"
+            docker pull $IMAGE:latest
+
+            echo "→ Stopping old container (if running)"
+            docker stop helloworld || true
+            docker rm helloworld || true
+
+            echo "→ Starting new container"
+            docker run -d \
+              --name helloworld \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              $IMAGE:latest
+
+            echo "→ Cleaning up old images"
+            docker image prune -f
+
+            echo "✅ Deployment complete!"
 
 # ── KEY GITHUB ACTIONS CONCEPTS (REFERENCE) ──────────────────────────────────
 #
