@@ -11,7 +11,7 @@
 
 # ── 1. WORKFLOW NAME ──────────────────────────────────────────────────────────
 # This name appears in the GitHub UI under the "Actions" tab.
-name: CI
+name: CI/CD
 
 # ── 2. TRIGGERS (ON) ──────────────────────────────────────────────────────────
 # The `on` keyword defines WHEN the workflow is triggered.
