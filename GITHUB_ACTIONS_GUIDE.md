@@ -414,6 +414,105 @@ If any step fails (exit code ≠ 0), the job stops and is marked as **failed**.
 
 ---
 
+## 12. CD — Continuous Deployment
+
+**Continuous Deployment** (CD) is the second half of CI/CD. While CI makes sure
+your code is correct, CD automatically delivers it to users.
+
+### CD in this project
+
+Our `deploy` job does the following:
+
+1. **Waits for CI to pass** — `needs: test` ensures we only deploy green builds.
+2. **Only runs on `main`** — the `if:` condition prevents deployment from PRs
+   or feature branches.
+3. **Builds a Docker image** — packages the app into a portable container.
+4. **Runs a smoke test** — starts a container locally to verify it works.
+5. **Pushes to GitHub Container Registry (GHCR)** — stores the image under
+   `ghcr.io/<owner>/<repo>:latest` and `ghcr.io/<owner>/<repo>:<commit-sha>`.
+6. **Runs a deploy script** — simulates deploying to a server.
+
+### Key CD concepts
+
+| Concept                 | Description                                                |
+|-------------------------|------------------------------------------------------------|
+| **Artifact**            | A build output (jar, binary, Docker image, etc.).          |
+| **Container registry**  | A place to store Docker images (Docker Hub, GHCR, etc.).  |
+| **Environment**         | A target for deployment (staging, production, etc.).       |
+| **Rolling deploy**      | Update instances one by one to avoid downtime.             |
+| **Blue-green deploy**   | Run two identical environments, switch traffic atomically. |
+| **Canary release**      | Roll out to a small subset first, then expand.             |
+| **Smoke test**          | A quick sanity check after deployment.                     |
+
+### Container registry: GHCR
+
+GitHub Container Registry (`ghcr.io`) is free for public images and built right
+into GitHub. Your `GITHUB_TOKEN` already has access — you just need to grant
+`packages: write` permission in the job.
+
+### Permissions
+
+The deploy job declares:
+
+```yaml
+permissions:
+  contents: read
+  packages: write
+```
+
+This ensures the workflow's `GITHUB_TOKEN` can push images to the registry,
+while keeping other permissions minimal (principle of least privilege).
+
+### docker/login-action
+
+```yaml
+- uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+```
+
+This authenticates Docker to the GHCR registry so subsequent `docker push`
+commands work.
+
+### Tagging strategy
+
+We tag each image twice:
+- `latest` — always points to the most recent successful build.
+- `${{ github.sha }}` — the exact commit hash (immutable, good for rollbacks).
+
+### Deploy script
+
+The `deploy.sh` script simulates real deployment steps:
+- Pulling the image from the registry
+- Stopping old containers
+- Starting new containers
+- Running health checks
+
+In a real project, this would use SSH, Ansible, Kubernetes, or a cloud
+deployment tool (AWS CDK, Terraform, etc.).
+
+### CD pipeline flow
+
+```
+Push to main
+    │
+    ▼
+┌─────────────┐     ┌──────────────┐     ┌───────────────┐
+│  CI: test   │ ──► │  CD: build   │ ──► │  CD: deploy   │
+│  (lint +    │     │  Docker img  │     │  (staging →   │
+│   pytest)   │     │  + push GHCR │     │   production) │
+└─────────────┘     └──────────────┘     └───────────────┘
+```
+
+The `needs: test` declaration creates this dependency chain. If tests fail,
+deployment is **automatically skipped**.
+
+---
+
+
+
 ## Appendix A: Cheat Sheet
 
 ```yaml

@@ -86,14 +86,48 @@ jobs:
       - name: Run hello script
         run: python hello.py
 
-  # ── JOB: deploy (example — depends on test) ──────────────────────────────
-  # You can add more jobs.  The `needs` keyword makes them run sequentially.
-  # deploy:
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy placeholder
-  #       run: echo "Deploy would happen here after tests pass"
+  # ── JOB: deploy (CD — runs only after tests pass on main) ────────────────
+  # This job demonstrates CONTINUOUS DEPLOYMENT:
+  #   - `needs: test` → only runs if the test job succeeds
+  #   - `if:` → only runs on push to main (not on PRs)
+  #   - Builds a Docker image and pushes it to GitHub Container Registry (GHCR)
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write      # needed to push to GHCR
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: docker build -t helloworld .
+
+      - name: Run container smoke test
+        run: docker run --rm helloworld
+
+      - name: Tag and push to GHCR
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}
+          docker tag helloworld $IMAGE:latest
+          docker tag helloworld $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+          docker push $IMAGE:${{ github.sha }}
+
+      - name: Run deploy script (simulated)
+        run: ./deploy.sh staging
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
 
 # ── KEY GITHUB ACTIONS CONCEPTS (REFERENCE) ──────────────────────────────────
 #
@@ -111,6 +145,9 @@ jobs:
 #   if                –    Conditionally run a step / job
 #   secrets           –    Sensitive values stored in repo Settings → Secrets
 #   artifacts         –    Files saved after a job (logs, builds, etc.)
+#   permissions       –   Override default GITHUB_TOKEN permissions (e.g. packages: write)
 #   GITHUB_TOKEN      –    Auto-generated token; used to push, comment, etc.
+#   docker/login-action –  Marketplace action to authenticate to a container registry
+#   docker/build-push-action – Marketplace action to build & push Docker images
 #
 # For more detail, see: https://docs.github.com/en/actions

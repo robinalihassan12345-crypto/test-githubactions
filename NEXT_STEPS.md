@@ -95,7 +95,77 @@ act --pull=false                # skip pulling the runner image
 
 ---
 
-## 4. Next Learning Steps
+## 4. CI/CD Learning Roadmap
+
+### CI you already have
+
+| # | Step | What it does |
+|---|------|-------------|
+| 1 | `pip install -r requirements.txt` | Installs dependencies |
+| 2 | `ruff check .` | Lints code for style/errors |
+| 3 | `pytest -v --tb=short` | Runs unit tests |
+| 4 | `python hello.py` | Verifies the app runs |
+
+### CD added in this project
+
+| # | Step | What it does |
+|---|------|-------------|
+| 1 | `docker build -t helloworld` | Builds a container image |
+| 2 | `docker run --rm helloworld` | Smoke test: runs container to verify |
+| 3 | `docker push ghcr.io/...` | Pushes image to GitHub Container Registry |
+| 4 | `./deploy.sh staging` | Simulates deploying to staging environment |
+
+### Experiments for you
+
+#### ☐ See the deploy job in action
+
+Push to `main` and watch the `deploy` job run after `test` completes. Then
+push to a **feature branch** — the deploy job should be **skipped** (only runs
+on main).
+
+#### ☐ Add a production environment
+
+Create a GitHub Environment called "production" in your repo settings
+(**Settings → Environments**), then update the deploy job to require manual
+approval before deploying to production:
+
+```yaml
+deploy-prod:
+  needs: deploy
+  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  runs-on: ubuntu-latest
+  environment: production
+  steps:
+    - run: ./deploy.sh production
+      env:
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_SHA: ${{ github.sha }}
+```
+
+#### ☐ Deploy to a real cloud
+
+Try deploying to a free tier:
+
+| Platform | Free tier includes | How |
+|----------|-------------------|-----|
+| **Render** | Static sites, web services | Use `render.yaml` or GitHub integration |
+| **Fly.io** | 3 VMs, 3GB persistent storage | `fly deploy` in workflow |
+| **Railway** | $5/month credit, no credit card | Connect GitHub repo directly |
+| **AWS EC2** | 750 hrs/month free (12 months) | SSH + docker-compose in workflow |
+
+#### ☐ Add a status badge
+
+After you've pushed to GitHub, add a CI badge to your README:
+
+```markdown
+[![CI](https://github.com/YOUR_USER/helloworld/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USER/helloworld/actions/workflows/ci.yml)
+```
+
+The badge shows green ✅ or red ❌ for the latest run.
+
+---
+
+## 6. Next Learning Steps
 
 Once you're comfortable with this workflow:
 
@@ -108,11 +178,11 @@ Once you're comfortable with this workflow:
 | **Container actions**          | Write your own custom Docker-based action.                            |
 | **OIDC / cloud auth**          | Authenticate to AWS/GCP/Azure without static secrets.                 |
 | **Scheduled workflows**        | Run nightly builds or weekly dependency bumps with `cron`.            |
-| **Status badges**              | Add a [![CI](...)](...) badge to your repo's README.                  |
+| **Status badges**              | Add a badge to your repo's README.                  |
 
 ---
 
-## 5. Add a Status Badge
+## 7. Add a Status Badge
 
 ```markdown
 [![CI](https://github.com/YOUR_USER/helloworld/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USER/helloworld/actions/workflows/ci.yml)
@@ -123,7 +193,7 @@ badge at the top of your repo.
 
 ---
 
-## 6. Common Problems
+## 8. Common Problems
 
 | Symptom                         | Likely fix                                             |
 |---------------------------------|--------------------------------------------------------|
