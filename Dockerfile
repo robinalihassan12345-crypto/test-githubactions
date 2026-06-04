@@ -8,4 +8,5 @@ WORKDIR /app
 COPY --from=builder /root/.local /root/.local
 COPY hello.py .
 ENV PATH=/root/.local/bin:$PATH
+EXPOSE 8080
 CMD ["python", "hello.py"]
