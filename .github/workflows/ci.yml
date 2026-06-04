@@ -1,0 +1,116 @@
+# =============================================================================
+# GITHUB ACTIONS WORKFLOW — CI Pipeline
+# =============================================================================
+#
+# Every GitHub repo can have one or more workflows.  A workflow is a YAML file
+# placed under .github/workflows/ that tells GitHub WHAT to run and WHEN.
+#
+# This file runs on every push and pull request to ANY branch.
+# It installs dependencies, lints the code, runs tests, and prints "hello".
+# =============================================================================
+
+# ── 1. WORKFLOW NAME ──────────────────────────────────────────────────────────
+# This name appears in the GitHub UI under the "Actions" tab.
+name: CI
+
+# ── 2. TRIGGERS (ON) ──────────────────────────────────────────────────────────
+# The `on` keyword defines WHEN the workflow is triggered.
+#
+# Common events:
+#   push        → runs when code is pushed to matching branches
+#   pull_request → runs when a PR is opened / updated
+#   schedule    → runs on a cron schedule
+#   workflow_dispatch → allows you to trigger it manually from the GitHub UI
+#   release     → runs when a release is published
+on:
+  push:
+    branches: [main, master]   # only trigger on these branches
+  pull_request:
+    branches: [main, master]   # also on PRs targeting these branches
+  workflow_dispatch:            # lets you click "Run workflow" in the UI
+
+# ── 3. JOBS ───────────────────────────────────────────────────────────────────
+# A workflow is made up of one or more JOBS that run in parallel by default.
+# Each job runs on a fresh virtual machine (runner).
+jobs:
+  # ── JOB: test ─────────────────────────────────────────────────────────────
+  test:
+    # Runner: the OS that the job runs on.
+    # ubuntu-latest is the most common choice (free, fast).
+    runs-on: ubuntu-latest
+
+    # ── 3a. STRATEGY (optional) ──────────────────────────────────────────────
+    # A matrix strategy lets you test across multiple OSes / language versions.
+    # GitHub will expand this into 3 separate jobs (one per Python version).
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    # ── 3b. STEPS ────────────────────────────────────────────────────────────
+    # Each job runs a sequence of STEPS.  Steps can run shell commands OR use
+    # pre-built "actions" from the GitHub Marketplace.
+    steps:
+      # Step 1 — Checkout the repository code onto the runner.
+      # Uses the official `actions/checkout` action (v4).
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2 — Set up Python on the runner.
+      # Uses the official `actions/setup-python` action.
+      # The `with` block passes inputs to the action.
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"          # caches pip dependencies for faster runs
+
+      # Step 3 — Install project dependencies.
+      # `run` executes a shell command on the runner.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4 — Lint with ruff (fast Python linter).
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check .
+
+      # Step 5 — Run tests with pytest.
+      - name: Run tests
+        run: |
+          pytest -v --tb=short
+
+      # Step 6 — Run the hello script to verify it works.
+      - name: Run hello script
+        run: python hello.py
+
+  # ── JOB: deploy (example — depends on test) ──────────────────────────────
+  # You can add more jobs.  The `needs` keyword makes them run sequentially.
+  # deploy:
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy placeholder
+  #       run: echo "Deploy would happen here after tests pass"
+
+# ── KEY GITHUB ACTIONS CONCEPTS (REFERENCE) ──────────────────────────────────
+#
+#   name              –    Display name for the workflow
+#   on                –    Event(s) that trigger the workflow
+#   jobs              –    One or more jobs that run on a runner
+#   runs-on           –    OS image for the runner (ubuntu-latest, windows-latest, etc.)
+#   strategy/matrix   –    Run the same job across multiple OS/version combos
+#   steps             –    Ordered list of things to do in a job
+#   uses              –    Reference a pre-built action (org/repo@version)
+#   run               –    Execute a shell command
+#   with              –    Pass inputs to an action
+#   env               –    Set environment variables for a step or job
+#   needs             –    Declare a dependency on another job
+#   if                –    Conditionally run a step / job
+#   secrets           –    Sensitive values stored in repo Settings → Secrets
+#   artifacts         –    Files saved after a job (logs, builds, etc.)
+#   GITHUB_TOKEN      –    Auto-generated token; used to push, comment, etc.
+#
+# For more detail, see: https://docs.github.com/en/actions
