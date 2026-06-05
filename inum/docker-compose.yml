@@ -1,0 +1,14 @@
+services:
+  ium:
+    image: brendanl79/ium:latest
+    container_name: ium
+    restart: always
+    ports:
+      - "5050:5050"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/config
+      - ./state:/state
+    environment:
+      - WEBUI_USER=admin              # Your desired username
+      - WEBUI_PASSWORD=admin  # Your desired password

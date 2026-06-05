@@ -1,9 +1,19 @@
-def greet(name: str = "World") -> str:
-    return f"Hello, {name}!"
+import http.server
+import json
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps({"message": "Hello, World!"}).encode())
 
 
 def main() -> None:
-    print(greet())
+    server = http.server.HTTPServer(("0.0.0.0", 8080), Handler)
+    print("Serving on port 8080...")
+    server.serve_forever()
 
 
 if __name__ == "__main__":

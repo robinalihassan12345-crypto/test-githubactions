@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      # Optional: Set custom schedule (cron format, 6 fields)
+      # - WATCHTOWER_SCHEDULE=0 0 4 * * *
+    # To monitor ONLY specific containers, uncomment and add container names:
+    # command: helloworld

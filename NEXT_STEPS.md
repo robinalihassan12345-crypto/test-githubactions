@@ -362,6 +362,16 @@ Your Docker Hub access token needs **Read & Write** permissions.
 Go to Docker Hub → Account Settings → Security → regenerate the token
 with the correct scope.
 
+### "Tag and push to Docker Hub" step — `/helloworld: No such file or directory`
+
+This error means the `${{ secrets.DOCKER_USERNAME }}` secret likely has a trailing
+newline, which causes the shell to interpret `/helloworld` as a command instead of an
+image name suffix.
+
+**Fix:** Go to your repo → Settings → Secrets and variables → Actions, and re-enter
+`DOCKER_USERNAME` with **no trailing whitespace or newline**. The workflow already has
+a safeguard (`xargs` trims whitespace), but the secret itself should be clean too.
+
 ---
 
 ## Files in This Project
