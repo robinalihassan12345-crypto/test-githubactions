@@ -124,7 +124,7 @@ jobs:
       # ── STEP: Tag and push to Docker Hub ────────────────────────────────
       - name: Tag and push to Docker Hub
         run: |
-          IMAGE=${{ secrets.DOCKER_USERNAME }}/helloworld
+          IMAGE=$(echo "${{ secrets.DOCKER_USERNAME }}" | xargs)/helloworld
           docker tag helloworld $IMAGE:latest
           docker tag helloworld $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
