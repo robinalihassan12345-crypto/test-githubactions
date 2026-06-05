@@ -125,7 +125,7 @@ jobs:
       - name: Tag and push to Docker Hub
         run: |
           IMAGE=${{ secrets.DOCKER_USERNAME }}/helloworld
-          docker run --rm helloworld
+#          docker run --rm helloworld
           docker tag helloworld $IMAGE:latest
           docker tag helloworld $IMAGE:${{ github.sha }}
           docker push $IMAGE:latest
