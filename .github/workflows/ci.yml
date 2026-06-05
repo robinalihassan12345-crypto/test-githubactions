@@ -124,7 +124,12 @@ jobs:
 
       # ── STEP: Smoke test ────────────────────────────────────────────────
       - name: Run container smoke test
-        run: docker run --rm helloworld
+        run: |
+          docker run -d --name smoke-test helloworld
+          sleep 2
+          curl -sf http://localhost:8080 | python -c "import sys,json; d=json.load(sys.stdin); assert d.get('message')=='Hello, World!', f'Unexpected: {d}'"
+          docker stop smoke-test
+          docker rm smoke-test
 
       # ── STEP: Tag and push to Docker Hub ────────────────────────────────
       - name: Tag and push to Docker Hub
