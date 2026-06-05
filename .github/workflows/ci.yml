@@ -82,9 +82,14 @@ jobs:
         run: |
           pytest -v --tb=short
 
-      # Step 6 — Run the hello script to verify it works.
-      - name: Run hello script
-        run: python hello.py
+      # Step 6 — Run the HTTP server and verify it responds.
+      - name: Smoke test HTTP server
+        run: |
+          python hello.py &
+          SERVER_PID=$!
+          sleep 2
+          curl -sf http://localhost:8080/ | grep "Hello, World!"
+          kill $SERVER_PID
 
   # ── JOB: deploy (CD — runs only after tests pass on main) ────────────────
   # This job demonstrates CONTINUOUS DEPLOYMENT:
