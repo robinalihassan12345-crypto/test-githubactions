@@ -271,7 +271,7 @@ curl http://localhost:8080
 
 # Or check the container logs:
 docker logs helloworld
-# "Hello, Ali!" should appear (our app prints once and exits, so it
+# "Hello, OpenCode!" should appear (our app prints once and exits, so it
 # will restart in a loop — for a real app you'd run a web server)
 ```
 

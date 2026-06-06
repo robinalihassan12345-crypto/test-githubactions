@@ -2,7 +2,7 @@ from hello import greet
 
 
 def test_greet_default():
-    assert greet() == "Hello, Ali!"
+    assert greet() == "Hello, OpenCode!"
 
 
 def test_greet_custom():

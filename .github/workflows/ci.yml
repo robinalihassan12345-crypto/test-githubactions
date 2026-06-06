@@ -88,7 +88,7 @@ jobs:
           python hello.py &
           SERVER_PID=$!
           sleep 2
-          curl -sf http://localhost:8080/ | grep "Hello, Ali!"
+          curl -sf http://localhost:8080/ | grep "Hello, OpenCode!"
           kill $SERVER_PID
 
   # ── JOB: deploy (CD — runs only after tests pass on main) ────────────────
@@ -127,7 +127,7 @@ jobs:
 #        run: |
 #          docker run -d --name smoke-test helloworld
 #          sleep 3
-#          curl --retry 5 --retry-delay 2 --retry-connrefused -s http://localhost:8080 | python -c "import sys,json; d=json.load(sys.stdin); assert d.get('message')=='Hello, Ali!', f'Unexpected: {d}'"
+#          curl --retry 5 --retry-delay 2 --retry-connrefused -s http://localhost:8080 | python -c "import sys,json; d=json.load(sys.stdin); assert d.get('message')=='Hello, OpenCode!', f'Unexpected: {d}'"
 #          docker stop smoke-test
 #          docker rm smoke-test
 

@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: robinalihassan12345/helloworld:latest
     ports:
       - "0.0.0.0:8080:8080"
     environment:
