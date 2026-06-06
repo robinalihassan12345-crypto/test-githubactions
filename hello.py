@@ -2,7 +2,7 @@ import http.server
 import json
 
 
-def greet(name: str = "World") -> str:
+def greet(name: str = "everyone") -> str:
     return f"Hello, {name}!"
 
 

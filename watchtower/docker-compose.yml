@@ -9,6 +9,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=60  # 60 seconds = 1 minute
       # Optional: Set custom schedule (cron format, 6 fields)
       # - WATCHTOWER_SCHEDULE=0 0 4 * * *
     # To monitor ONLY specific containers, uncomment and add container names:
